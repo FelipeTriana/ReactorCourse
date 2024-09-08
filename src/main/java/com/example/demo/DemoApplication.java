@@ -22,7 +22,7 @@ public class DemoApplication implements CommandLineRunner {
 				.doOnNext(elemento -> System.out.println(elemento));
 
 		//La suscripción es necesaria para que el observador reciba los elementos emitidos por el sujeto, pero en este caso, no es parte del observador en sí, sino del flujo que conecta ambos.
-		//Cuando nos suscribimos estamos observando
+		//Cuando nos suscribimos estamos observando, el observador es quien maneja tambien los errores que se puedan presentar.
 		nombres.subscribe();
 	}
 }
