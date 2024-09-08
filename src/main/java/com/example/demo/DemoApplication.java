@@ -7,7 +7,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import reactor.core.publisher.Flux;
 
-//Consumer: Es cualquier tarea que queramos implementar usando expresiones lambda
 
 @SpringBootApplication
 public class DemoApplication implements CommandLineRunner {
@@ -21,16 +20,24 @@ public class DemoApplication implements CommandLineRunner {
 	@Override
 	public void run(String... args) throws Exception {
 
-		Flux<String> nombres = Flux.just("Andres","Pedro","Diego","","Juan")
+		Flux<String> nombres = Flux.just("Andres","Pedro","Diego","Zazza","Juan")
 				.doOnNext(e -> {
 					if (e.isEmpty()){
-						throw new RuntimeException("Nombres no pueden ser vacios"); //El error interrumpe el flujo
+						throw new RuntimeException("Nombres no pueden ser vacios");
 					}
 					System.out.println(e);
 				});
 
-		//Ahora en el suscribe se puede manejar el error que ocurra en el evento doOnNext
+		//Si vemos la especificacion de subscribe, podemos ver que recibe 3 parametros, 2 Consumer y un Runnable
+		//Consumer: Es cualquier tarea que queramos implementar usando expresiones lambda
+		//Runnable: Es un evento que se ejecuta al finalizar el observable, osea, se ejecuta en el onComplete
 		nombres.subscribe(log::info,
-				error -> log.error(error.getMessage()));
+				error -> log.error(error.getMessage()),
+				new Runnable() {
+					@Override
+					public void run() {
+						log.info("Ha finalizado la ejecucion del observable con exito");
+					}
+				});
 	}
 }
