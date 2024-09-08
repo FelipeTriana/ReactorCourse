@@ -7,6 +7,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import reactor.core.publisher.Flux;
 
+//Consumer: Es cualquier tarea que queramos implementar usando expresiones lambda
+
 @SpringBootApplication
 public class DemoApplication implements CommandLineRunner {
 
@@ -19,11 +21,16 @@ public class DemoApplication implements CommandLineRunner {
 	@Override
 	public void run(String... args) throws Exception {
 
-		Flux<String> nombres = Flux.just("Andres","Pedro","Diego","Juan")
-				.doOnNext(System.out::println); //la referencia al metodo abrevia la funcion lambda
+		Flux<String> nombres = Flux.just("Andres","Pedro","Diego","","Juan")
+				.doOnNext(e -> {
+					if (e.isEmpty()){
+						throw new RuntimeException("Nombres no pueden ser vacios"); //El error interrumpe el flujo
+					}
+					System.out.println(e);
+				});
 
-		//Es lo mismo ejecutar la tarea en el subscribe que en el doOnNext
-		//Ojo: La tarea se esta suscribiendo en el evento doOnNext
-		nombres.subscribe(log::info);
+		//Ahora en el suscribe se puede manejar el error que ocurra en el evento doOnNext
+		nombres.subscribe(log::info,
+				error -> log.error(error.getMessage()));
 	}
 }
