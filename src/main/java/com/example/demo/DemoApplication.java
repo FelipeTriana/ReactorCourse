@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import com.example.demo.models.Usuario;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -19,19 +20,23 @@ public class DemoApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-
-		Flux<String> nombres = Flux.just("Andres","Pedro","Diego","Zazza","Juan")
+		//El operador map es un operador de transformacion, es decir, se encarga de transformar los elementos de un flujo de datos.
+		//Map siempre debe retornar algo
+		Flux<Usuario> nombres = Flux.just("Andres","Pedro","Diego","Zazza","Juan")
+				.map(nombre -> new Usuario(nombre.toUpperCase(), null))
 				.doOnNext(e -> {
-					if (e.isEmpty()){
+					if (e == null){
 						throw new RuntimeException("Nombres no pueden ser vacios");
 					}
-					System.out.println(e);
-				});
+					System.out.println(e.getNombre());
+				})
+				.map(usuario -> {
+					String nombre = usuario.getNombre().toLowerCase();
+					usuario.setNombre(nombre);
+                    return usuario;
+                });
 
-		//Si vemos la especificacion de subscribe, podemos ver que recibe 3 parametros, 2 Consumer y un Runnable
-		//Consumer: Es cualquier tarea que queramos implementar usando expresiones lambda
-		//Runnable: Es un evento que se ejecuta al finalizar el observable, osea, se ejecuta en el onComplete
-		nombres.subscribe(log::info,
+		nombres.subscribe(e -> log.info(e.toString()),
 				error -> log.error(error.getMessage()),
 				new Runnable() {
 					@Override
