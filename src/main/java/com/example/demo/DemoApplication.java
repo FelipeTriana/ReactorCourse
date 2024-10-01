@@ -7,12 +7,11 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
 
-//Si por ejemplo realizamos una consulta a la base de datos obtenemos una lista de objetos, podemos convertir ese listado en un flujo de datos con el metodo fromIterable
-//Hay bases de datos NoSql que son reactivas y ya devuelven un flujo de datos en vez de una lista, por ejemplo MongoDB
 @SpringBootApplication
 public class DemoApplication implements CommandLineRunner {
 
@@ -24,6 +23,42 @@ public class DemoApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
+		ejemploFlatMap();
+
+	}
+
+	//El fatlMap es muy parecido al map, pero en lugar de devolver un objeto, devuelve un flujo de objetos
+	/* El .faltMap aplana el flujo de objetos, osea que si por ejemplo en su interior creamos Flux de objetos, este los aplana a todos en un solo flujo Flux,
+	   con .map en cambio, se generaria un flujo de flujos de objetos tipo Flux<Flux<Objeto>>
+	*/
+	public void ejemploFlatMap() throws Exception {
+		List<String> usuariosList = new ArrayList<>();
+		usuariosList.add("Andres Guzman");
+		usuariosList.add("Pedro Anuar");
+		usuariosList.add("Diego Ciruela");
+		usuariosList.add("Zazza Kepaza");
+		usuariosList.add("Juan Planeta");
+
+	Flux.fromIterable(usuariosList)
+				.map(nombre -> new Usuario(nombre.split(" ")[0], nombre.split(" ")[1].toUpperCase()))
+				.flatMap(usuario -> { //Se reemplazo el filter por el flatMap
+					if (usuario.getNombre().equalsIgnoreCase("zazza")) {
+						return Mono.just(usuario);
+					} else {
+						return Mono.empty();
+					}
+				})
+				.map(usuario -> {
+					String nombre = usuario.getNombre().toLowerCase();
+					usuario.setNombre(nombre);
+					return usuario;
+				})
+			.subscribe(u -> log.info(u.toString()));
+
+
+	}
+
+	public void ejemploIterable() throws Exception {
 		List<String> usuariosList = new ArrayList<>();
 		usuariosList.add("Andres Guzman");
 		usuariosList.add("Pedro Anuar");
@@ -45,8 +80,8 @@ public class DemoApplication implements CommandLineRunner {
 				.map(usuario -> {
 					String nombre = usuario.getNombre().toLowerCase();
 					usuario.setNombre(nombre);
-                    return usuario;
-                });
+					return usuario;
+				});
 
 		nombres.subscribe(e -> log.info(e.toString()),
 				error -> log.error(error.getMessage()),
