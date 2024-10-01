@@ -23,14 +23,35 @@ public class DemoApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		ejemploFlatMap();
+		ejemploToString();
 
 	}
 
-	//El fatlMap es muy parecido al map, pero en lugar de devolver un objeto, devuelve un flujo de objetos
-	/* El .faltMap aplana el flujo de objetos, osea que si por ejemplo en su interior creamos Flux de objetos, este los aplana a todos en un solo flujo Flux,
-	   con .map en cambio, se generaria un flujo de flujos de objetos tipo Flux<Flux<Objeto>>
-	*/
+	public void ejemploToString() throws Exception {
+		List<Usuario> usuariosList = new ArrayList<>();
+		usuariosList.add(new Usuario("Andres", "Guzman"));
+		usuariosList.add(new Usuario("Pedro", "Anuar"));
+		usuariosList.add(new Usuario("Diego", "Ciruela"));
+		usuariosList.add(new Usuario("Zazza", "Kepaza"));
+		usuariosList.add(new Usuario("Juan", "Planeta"));
+
+		Flux.fromIterable(usuariosList)
+				.map(usuario -> usuario.getNombre().toUpperCase().concat(" ").concat(usuario.getApellido().toUpperCase()))
+				.flatMap(usuario -> {
+					if (usuario.split(" ")[0].equalsIgnoreCase("zazza")) {
+						return Mono.just(usuario); //Cada elemento que se emite se convierte a un Mono o Flux y por dentro el se aplana y se une al mismo stream del flujo de salida
+					} else {
+						return Mono.empty();
+					}
+				})
+				.map(usuario -> {
+					return usuario.split(" ")[0].toLowerCase();
+				})
+				.subscribe(u -> log.info(u.toString()));
+
+
+	}
+
 	public void ejemploFlatMap() throws Exception {
 		List<String> usuariosList = new ArrayList<>();
 		usuariosList.add("Andres Guzman");
@@ -41,7 +62,7 @@ public class DemoApplication implements CommandLineRunner {
 
 	Flux.fromIterable(usuariosList)
 				.map(nombre -> new Usuario(nombre.split(" ")[0], nombre.split(" ")[1].toUpperCase()))
-				.flatMap(usuario -> { //Se reemplazo el filter por el flatMap
+				.flatMap(usuario -> {
 					if (usuario.getNombre().equalsIgnoreCase("zazza")) {
 						return Mono.just(usuario);
 					} else {
@@ -65,8 +86,7 @@ public class DemoApplication implements CommandLineRunner {
 		usuariosList.add("Diego Ciruela");
 		usuariosList.add("Zazza Kepaza");
 		usuariosList.add("Juan Planeta");
-		//fromIterable genera un flujo a apartir de un objeto iterable
-		Flux<String> nombres = Flux.fromIterable(usuariosList);//Flux.just("Andres Guzman","Pedro Anuar","Diego Ciruela","Zazza Kepaza","Juan Planeta");
+		Flux<String> nombres = Flux.fromIterable(usuariosList);
 
 		Flux<Usuario> usuarios = nombres
 				.map(nombre -> new Usuario(nombre.split(" ")[0], nombre.split(" ")[1]))
