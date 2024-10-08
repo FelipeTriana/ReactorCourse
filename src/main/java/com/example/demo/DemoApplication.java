@@ -23,7 +23,21 @@ public class DemoApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		ejemploToString();
+		ejemploCollectList();
+
+	}
+
+	public void ejemploCollectList() throws Exception {
+		List<Usuario> usuariosList = new ArrayList<>();
+		usuariosList.add(new Usuario("Andres", "Guzman"));
+		usuariosList.add(new Usuario("Pedro", "Anuar"));
+		usuariosList.add(new Usuario("Diego", "Ciruela"));
+		usuariosList.add(new Usuario("Zazza", "Kepaza"));
+		usuariosList.add(new Usuario("Juan", "Planeta"));
+
+		Flux.fromIterable(usuariosList)
+				.collectList() //Convierte el Flux en un Mono y el nuevo Mono almacena una lista asi: Mono<List<Usuario>>
+				.subscribe(lista -> log.info(lista.toString()));
 
 	}
 
@@ -41,7 +55,7 @@ public class DemoApplication implements CommandLineRunner {
 					if (usuario.split(" ")[0].equalsIgnoreCase("zazza")) {
 						return Mono.just(usuario); //Cada elemento que se emite se convierte a un Mono o Flux y por dentro el se aplana y se une al mismo stream del flujo de salida
 					} else {
-						return Mono.empty();
+						return Mono.empty(); //Ojo: flatMap aplana el flujo de datos y retorna todo en un solo flujo Flux
 					}
 				})
 				.map(usuario -> {
