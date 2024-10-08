@@ -1,6 +1,8 @@
 package com.example.demo;
 
+import com.example.demo.models.Comentarios;
 import com.example.demo.models.Usuario;
+import com.example.demo.models.UsuarioComentarios;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -23,8 +25,22 @@ public class DemoApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		ejemploCollectList();
+		ejemploUsuarioComentariosFlatMap();
 
+	}
+
+	public void ejemploUsuarioComentariosFlatMap(){
+		Mono<Usuario> usuarioMono = Mono.fromCallable(() -> new Usuario("John", "Doe")); //Dentro de fromCallable se puede hacer llamado a un metodo y el envolvera el retorno en un Mono
+		Mono<Comentarios> comentariosMono = Mono.fromCallable(() -> {
+			Comentarios comentarios = new Comentarios();
+			comentarios.addComentario("Hola pepe, que tal?");
+			comentarios.addComentario("Mañana nos vemos");
+			return comentarios;
+		});
+
+		//Queremos crear un flujo de datos que emita un usuario y sus comentarios (Combinacion de los dos flujos anteriores con flatMap)
+		usuarioMono.flatMap( u -> comentariosMono.map(c -> new UsuarioComentarios(u, c)))
+				.subscribe(uc -> log.info(uc.toString()));
 	}
 
 	public void ejemploCollectList() throws Exception {
