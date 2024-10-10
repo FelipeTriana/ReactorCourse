@@ -25,8 +25,42 @@ public class DemoApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		ejemploUsuarioComentariosFlatMap();
+		ejemploUsuarioComentariosZipWithForma2();
 
+	}
+
+	public void ejemploUsuarioComentariosZipWithForma2(){
+		Mono<Usuario> usuarioMono = Mono.fromCallable(() -> new Usuario("John", "Doe"));
+		Mono<Comentarios> comentariosMono = Mono.fromCallable(() -> {
+			Comentarios comentarios = new Comentarios();
+			comentarios.addComentario("Hola pepe, que tal?");
+			comentarios.addComentario("Mañana nos vemos");
+			return comentarios;
+		});
+
+		Mono <UsuarioComentarios> usuarioConComentarios = usuarioMono.zipWith(comentariosMono) //Con esta sintaxis zipWith retorna una tupla con los dos elementos, pero al aplicar map tendremos el mismo resultado
+				.map(tuple -> {
+					Usuario u = tuple.getT1();
+					Comentarios c = tuple.getT2();
+					return new UsuarioComentarios(u, c);
+				});
+
+		usuarioConComentarios.subscribe(uc -> log.info(uc.toString()));
+	}
+
+	public void ejemploUsuarioComentariosZipWith(){
+		Mono<Usuario> usuarioMono = Mono.fromCallable(() -> new Usuario("John", "Doe")); //Dentro de fromCallable se puede hacer llamado a un metodo y el envolvera el retorno en un Mono
+		Mono<Comentarios> comentariosMono = Mono.fromCallable(() -> {
+			Comentarios comentarios = new Comentarios();
+			comentarios.addComentario("Hola pepe, que tal?");
+			comentarios.addComentario("Mañana nos vemos");
+			return comentarios;
+		});
+
+		//Queremos crear un flujo de datos que emita un usuario y sus comentarios (Combinacion de los dos flujos anteriores con zipWith)
+		Mono <UsuarioComentarios> usuarioConComentarios = usuarioMono.zipWith(comentariosMono, (usuario, comentarios) -> new UsuarioComentarios(usuario, comentarios));
+
+		usuarioConComentarios.subscribe(uc -> log.info(uc.toString()));
 	}
 
 	public void ejemploUsuarioComentariosFlatMap(){
