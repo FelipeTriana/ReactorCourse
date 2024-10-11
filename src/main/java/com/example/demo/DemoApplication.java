@@ -11,6 +11,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,8 +26,27 @@ public class DemoApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		ejemploZipWithRangos();
+		ejemploDelayElements();
 
+	}
+
+	public void ejemploDelayElements() throws InterruptedException {
+		Flux<Integer> range = Flux.range(1, 12)
+				.delayElements(Duration.ofSeconds(1))
+				.doOnNext(i -> log.info(i.toString()));
+
+		range.subscribe(); //No muestra nada en consola porque el flujo de datos se esta ejecutando en un hilo diferente
+
+		Thread.sleep(13000); //Como esto bloquea el hilo se mostrara en consola
+	}
+
+	public void ejemploInterval(){
+		Flux<Integer> range = Flux.range(1, 12);
+		Flux<Long> retraso = Flux.interval(Duration.ofSeconds(1));
+
+		range.zipWith(retraso, (ra, re) -> ra)  //Solamente emitiremos el rango ya que el delay se combinara con el rango
+				.doOnNext(i -> log.info(i.toString())) //Esto se podria hacer en el subscribe
+				.blockLast();   //Subscribe al flujo con bloqueo, bloquea hasta que se haya emitido el ultimo elemento.
 	}
 
 	public void ejemploZipWithRangos(){
@@ -35,7 +55,6 @@ public class DemoApplication implements CommandLineRunner {
 				.map( i -> (i * 2))
 				.zipWith(Flux.range(0,4), (uno, dos) -> String.format("Primer Flux: %d, Segundo Flux: %d", uno, dos))
 				.subscribe(texto -> log.info(texto));
-
 
 	}
 
