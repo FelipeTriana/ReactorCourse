@@ -14,6 +14,9 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.CountDownLatch;
 
 @SpringBootApplication
 public class DemoApplication implements CommandLineRunner {
@@ -26,8 +29,45 @@ public class DemoApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		ejemploDelayElements();
+		ejemploIntervalDesdeCreate();
 
+	}
+
+	/*Esta es otra forma de crear y emitir nuestro Flux Observable a nuestra medida por medio del metodo create y el emitter
+	donde cada objeto a emitir se reistra con .next*/
+	public void ejemploIntervalDesdeCreate() throws InterruptedException {
+
+		Flux.create(emitter -> {
+			Timer timer = new Timer();
+			timer.schedule(new TimerTask() {
+
+				private Integer contador = 0;
+
+				@Override
+				public void run() {
+					emitter.next(contador++);
+					if (contador == 10) {
+						timer.cancel();
+						emitter.complete();
+					}
+				}
+			}, 1000, 1000);
+		})
+				.subscribe(next -> log.info(next.toString()),   //Aqui se puede insertar el comportamiento de un doOnNext, ademas de control del error y el onComplete
+						error -> log.error(error.getMessage()),
+						() -> log.info("Hemos terminado"));
+	}
+
+	public void ejemploIntervalInfinito() throws InterruptedException {
+		CountDownLatch latch = new CountDownLatch(1);
+
+		Flux.interval(Duration.ofSeconds(1))
+				.doOnTerminate(latch::countDown)
+				.map(i -> "Hola" + i)
+				.doOnNext(s -> log.info(s))
+				.subscribe();
+
+		latch.await();
 	}
 
 	public void ejemploDelayElements() throws InterruptedException {
