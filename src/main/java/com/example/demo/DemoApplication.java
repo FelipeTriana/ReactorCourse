@@ -3,6 +3,8 @@ package com.example.demo;
 import com.example.demo.models.Comentarios;
 import com.example.demo.models.Usuario;
 import com.example.demo.models.UsuarioComentarios;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -29,8 +31,53 @@ public class DemoApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		ejemploIntervalDesdeCreate();
+		ejemploContraPresionManual();
 
+	}
+
+	//Otra forma mas sencilla de aplicar contrapresion es con el metodo limitRate
+	public void ejemploContraPresion() {
+		Flux.range(1, 10)
+				.log()
+				.limitRate(3) //Limitamos la cantidad de elementos que se pueden emitir por segundo
+				.subscribe();
+	}
+
+	//A continuacion la forma manual de aplicar contrapresion en un flujo de datos por medio de la implementacion del Subscriber
+	public void ejemploContraPresionManual() {
+		Flux.range(1, 10)
+				.log()
+				.subscribe(new Subscriber<Integer>() {
+					private Subscription s;
+					private Integer limite = 2;
+					private Integer consumido = 0;
+
+					@Override
+					public void onSubscribe(Subscription s) {
+						this.s = s;       //Recordar que el subscriber es el observador que requiere una subscripcion para ejecutar alguna tarea dentro del onNext cada vez que recibe un elemento del flujo
+						s.request(limite); //Solicitamos la cantidad de elementos definida en "limite"
+					}
+
+					@Override
+					public void onNext(Integer integer) {
+						log.info(integer.toString());
+						consumido++;
+						if (consumido == limite) {
+							consumido = 0;
+							s.request(limite);   //Se procesaran bloques de dos elementos, request es el metodo que solicita mas elementos al flujo
+						}
+					}
+
+					@Override
+					public void onError(Throwable t) {
+
+					}
+
+					@Override
+					public void onComplete() {
+
+					}
+				});
 	}
 
 	/*Esta es otra forma de crear y emitir nuestro Flux Observable a nuestra medida por medio del metodo create y el emitter
