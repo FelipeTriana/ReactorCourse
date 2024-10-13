@@ -34,7 +34,7 @@ public class DemoApplication implements CommandLineRunner {
 	}
 
 	/*Esta es otra forma de crear y emitir nuestro Flux Observable a nuestra medida por medio del metodo create y el emitter
-	donde cada objeto a emitir se reistra con .next*/
+	donde cada objeto a emitir se registra con .next*/
 	public void ejemploIntervalDesdeCreate() throws InterruptedException {
 
 		Flux.create(emitter -> {
@@ -49,6 +49,11 @@ public class DemoApplication implements CommandLineRunner {
 					if (contador == 10) {
 						timer.cancel();
 						emitter.complete();
+					}
+
+					if (contador == 5){
+						timer.cancel();
+						emitter.error(new InterruptedException("Error, se ha detenido el flux en 5!"));
 					}
 				}
 			}, 1000, 1000);
